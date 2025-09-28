@@ -35,7 +35,7 @@ const initialBlogPosts = [
 export default function BlogPage() {
   const { user } = useSession();
   const [isAdmin, setIsAdmin] = useState(false);
-  const params = useParams()
+  const params = useParams();
 
   useEffect(() => {
     setIsAdmin(user?.role === "admin");
@@ -108,9 +108,7 @@ export default function BlogPage() {
 
   const handleDeleteBlog = (id: string) => {
     if (!isAdmin) return;
-    if (confirm("Are you sure you want to delete this blog?")) {
-      setBlogPosts((prev) => prev.filter((post) => post.id !== id));
-    }
+    setBlogPosts((prev) => prev.filter((post) => post.id !== id));
   };
 
   const handleImageUpload = (id: string, imageUrl: string) => {

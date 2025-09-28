@@ -13,6 +13,7 @@ import {
 import { useSession } from "@/components/context/SessionContext";
 import { useRouter } from "next/navigation";
 import VolunteersTab from "@/components/VolunteerTab";
+import logo from "@/public/logo.jpg";
 import DonationsTab from "@/components/DonationTab";
 import Image from "next/image";
 
@@ -228,7 +229,7 @@ export default function AdminDashboard() {
               }}
               placeholder="Search donations..."
             />
-            <DonationsTab donations={donations} Badge={Badge} Button={Button} />
+            <DonationsTab donation={donations} Badge={Badge} Button={Button} />
             <Pagination
               page={donationPage}
               setPage={(p) => {
@@ -302,14 +303,7 @@ const Header = ({ handleLogout, Button }: any) => (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="flex justify-between items-center h-16">
         <div className="flex items-center space-x-2">
-          <Image
-            src={
-              "https://lh3.googleusercontent.com/a/ACg8ocKbTHXFQEmPOK9xLQbiqA94EGUz9YgS79Svrl9OLhct6cIlIug=s96-c"
-            }
-            width={56}
-            height={56}
-            alt="Logo"
-          />
+          <Image src={logo.src} width={56} height={56} alt="Logo" />
           <h1 className="text-xl font-semibold text-slate-900">
             Vanya Foundation
           </h1>

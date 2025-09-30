@@ -19,7 +19,7 @@ export function Header() {
               <Image src={logo.src} alt="Logo" width={96} height={96} />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-primary">
+              <h1 className="text-lg sm:text-xl font-bold text-primary">
                 Himvanya Foundation
               </h1>
             </div>

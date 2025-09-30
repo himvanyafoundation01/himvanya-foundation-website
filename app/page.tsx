@@ -115,7 +115,7 @@ export default function HomePageEditor() {
                   />
                 </div>
               ) : (
-                <h1 className="text-2xl md:text-5xl font-bold text-foreground mb-6 text-balance">
+                <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-6 text-balance">
                   {content.heroSection?.heroTitle}
                   <span className="text-primary">
                     {" "}
@@ -140,7 +140,7 @@ export default function HomePageEditor() {
                 </p>
               )}
 
-              <div className="flex  sm:flex-row gap-4">
+              <div className="flex   sm:flex-row gap-4">
                 <Button
                   asChild
                   size="sm"

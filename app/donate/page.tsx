@@ -17,7 +17,7 @@ export default function DonatePage() {
   const [donationType, setDonationType] = useState<"one-time" | "monthly">("one-time");
   const [donationPurpose, setDonationPurpose] = useState<string>("general");
   const [donationAmount, setDonationAmount] = useState<number>(500);
-  const [customAmount, setCustomAmount] = useState<string>("");
+  const [customAmount, setCustomAmount] = useState<string>("500");
 
   // EmailJS config
   const EMAILJS_SERVICE_ID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID!;
@@ -108,10 +108,10 @@ export default function DonatePage() {
           alert("Payment verification failed");
         }
       },
-  modal: {
-    escape: true,
-    backdropclose: false, // prevents auto-close redirect
-  },
+      modal: {
+        escape: true,
+        backdropclose: false, // prevents auto-close redirect
+      },
       theme: { color: "#3399cc" },
     };
 
@@ -176,7 +176,7 @@ export default function DonatePage() {
                           className="h-12"
                           onClick={() => {
                             setDonationAmount(amt);
-                            setCustomAmount("");
+                            setCustomAmount(amt.toString()); // set input box value when button clicked
                           }}
                         >
                           ₹{amt}
@@ -188,7 +188,7 @@ export default function DonatePage() {
                       <Input
                         placeholder="Custom amount"
                         className="text-lg"
-                        value={customAmount}
+                        value={customAmount} // controlled input
                         onChange={(e) => {
                           setCustomAmount(e.target.value);
                           setDonationAmount(Number(e.target.value) || 0);
@@ -196,7 +196,6 @@ export default function DonatePage() {
                       />
                     </div>
                   </div>
-
 
                   {/* Donation Purpose */}
                   <div>

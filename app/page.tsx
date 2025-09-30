@@ -115,7 +115,7 @@ export default function HomePageEditor() {
                   />
                 </div>
               ) : (
-                <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6 text-balance">
+                <h1 className="text-2xl md:text-5xl font-bold text-foreground mb-6 text-balance">
                   {content.heroSection?.heroTitle}
                   <span className="text-primary">
                     {" "}
@@ -135,20 +135,20 @@ export default function HomePageEditor() {
                   className="mb-4"
                 />
               ) : (
-                <p className="text-lg text-muted-foreground mb-8 text-pretty">
+                <p className="text-md text-muted-foreground mb-8 text-pretty">
                   {content.heroSection?.heroDescription}
                 </p>
               )}
 
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex  sm:flex-row gap-4">
                 <Button
                   asChild
-                  size="lg"
+                  size="sm"
                   className="bg-primary hover:bg-primary/90"
                 >
                   <Link href="/donate">Donate Now</Link>
                 </Button>
-                <Button asChild variant="outline" size="lg">
+                <Button asChild variant="outline" size="sm">
                   <Link href="/our-work">
                     Learn More <ArrowRight className="w-4 h-4 ml-2" />
                   </Link>

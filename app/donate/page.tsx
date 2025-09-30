@@ -10,22 +10,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Heart,
-  Users,
-  GraduationCap,
-  Stethoscope,
-  Shield,
-  CreditCard,
-} from "lucide-react";
+import { Heart, Users, GraduationCap, Stethoscope, Shield } from "lucide-react";
+import emailjs from "@emailjs/browser";
 
 export default function DonatePage() {
-  const [donationType, setDonationType] = useState<"one-time" | "monthly">(
-    "one-time"
-  );
+  const [donationType, setDonationType] = useState<"one-time" | "monthly">("one-time");
   const [donationPurpose, setDonationPurpose] = useState<string>("general");
   const [donationAmount, setDonationAmount] = useState<number>(500);
   const [customAmount, setCustomAmount] = useState<string>("");
+
+  // EmailJS config
+  const EMAILJS_SERVICE_ID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID!;
+  const EMAILJS_TEMPLATE_ID = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID!;
+  const EMAILJS_PUBLIC_KEY = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY!;
 
   // Load Razorpay SDK
   const loadRazorpayScript = () =>
@@ -45,16 +42,13 @@ export default function DonatePage() {
     if (!sdkLoaded) return alert("Razorpay SDK failed to load");
 
     // Collect donor info
-    const name =
-      (document.getElementById("firstName") as HTMLInputElement)?.value ||
-      "Donor";
-    const email =
-      (document.getElementById("email") as HTMLInputElement)?.value ||
-      "donor@example.com";
-    const phone =
-      (document.getElementById("phone") as HTMLInputElement)?.value || "";
-    const address =
-      (document.getElementById("address") as HTMLTextAreaElement)?.value || "";
+    const donor = {
+      firstName: (document.getElementById("firstName") as HTMLInputElement)?.value || "",
+      lastName: (document.getElementById("lastName") as HTMLInputElement)?.value || "",
+      email: (document.getElementById("email") as HTMLInputElement)?.value || "",
+      phone: (document.getElementById("phone") as HTMLInputElement)?.value || "",
+      address: (document.getElementById("address") as HTMLTextAreaElement)?.value || "",
+    };
 
     // Create order via API
     const order = await fetch("/api/razorpay", {
@@ -62,10 +56,10 @@ export default function DonatePage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         amount,
-        name,
-        email,
-        phone,
-        address,
+        name: donor.firstName + " " + donor.lastName,
+        email: donor.email,
+        phone: donor.phone,
+        address: donor.address,
         type: donationType,
         purpose: donationPurpose,
       }),
@@ -76,8 +70,7 @@ export default function DonatePage() {
       amount: donationType === "one-time" ? order.amount : undefined,
       currency: "INR",
       name: "Vanya Foundation",
-      description:
-        donationType === "one-time" ? "One-time Donation" : "Monthly Donation",
+      description: donationType === "one-time" ? "One-time Donation" : "Monthly Donation",
       order_id: donationType === "one-time" ? order.id : undefined,
       subscription_id: donationType === "monthly" ? order.id : undefined,
       handler: async function (response: any) {
@@ -87,9 +80,38 @@ export default function DonatePage() {
           body: JSON.stringify(response),
         }).then((res) => res.json());
 
-        if (verify.success) alert("Donation successful! Thank you ❤️");
-        else alert("Payment verification failed");
+        if (verify.success) {
+          alert("Donation successful! Thank you ❤️");
+
+          // Send EmailJS email
+          // try {
+          // const emailSend=  await emailjs.send(
+          //     EMAILJS_SERVICE_ID,
+          //     EMAILJS_TEMPLATE_ID,
+          //     {
+          //       first_name: donor.firstName,
+          //       last_name: donor.lastName,
+          //       email: donor.email,
+          //       phone: donor.phone,
+          //       address: donor.address,
+          //       amount: amount,
+          //       purpose: donationPurpose,
+          //       payment_id: response.razorpay_payment_id,
+          //     },
+          //     EMAILJS_PUBLIC_KEY
+          //   );
+          //   console.log(emailSend)
+          // } catch (err) {
+          //   console.error("EmailJS error:", err);
+          // }
+        } else {
+          alert("Payment verification failed");
+        }
       },
+  modal: {
+    escape: true,
+    backdropclose: false, // prevents auto-close redirect
+  },
       theme: { color: "#3399cc" },
     };
 
@@ -103,16 +125,13 @@ export default function DonatePage() {
 
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-primary/10 to-primary/5 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              Make a Donation
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto text-pretty">
-              Your contribution empowers communities and transforms lives across
-              India.
-            </p>
-          </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+            Make a Donation
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+            Your contribution empowers communities and transforms lives across India.
+          </p>
         </div>
       </section>
 
@@ -124,16 +143,12 @@ export default function DonatePage() {
             <div className="lg:col-span-2">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-2xl">
-                    Choose Your Donation
-                  </CardTitle>
+                  <CardTitle className="text-2xl">Choose Your Donation</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Donation Type */}
                   <div>
-                    <Label className="text-base font-semibold mb-4 block">
-                      Donation Type
-                    </Label>
+                    <Label className="text-base font-semibold mb-4 block">Donation Type</Label>
                     <RadioGroup
                       value={donationType}
                       onValueChange={(val) => setDonationType(val as any)}
@@ -152,14 +167,12 @@ export default function DonatePage() {
 
                   {/* Donation Amount */}
                   <div>
-                    <Label className="text-base font-semibold mb-4 block">
-                      Amount (₹)
-                    </Label>
+                    <Label className="text-base font-semibold mb-4 block">Amount (₹)</Label>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                       {[500, 1000, 2500, 5000].map((amt) => (
                         <Button
                           key={amt}
-                          variant="outline"
+                          variant={donationAmount === amt && !customAmount ? "default" : "outline"}
                           className="h-12"
                           onClick={() => {
                             setDonationAmount(amt);
@@ -176,16 +189,18 @@ export default function DonatePage() {
                         placeholder="Custom amount"
                         className="text-lg"
                         value={customAmount}
-                        onChange={(e) => setCustomAmount(e.target.value)}
+                        onChange={(e) => {
+                          setCustomAmount(e.target.value);
+                          setDonationAmount(Number(e.target.value) || 0);
+                        }}
                       />
                     </div>
                   </div>
 
+
                   {/* Donation Purpose */}
                   <div>
-                    <Label className="text-base font-semibold mb-4 block">
-                      Purpose
-                    </Label>
+                    <Label className="text-base font-semibold mb-4 block">Purpose</Label>
                     <RadioGroup
                       value={donationPurpose}
                       onValueChange={setDonationPurpose}
@@ -204,9 +219,7 @@ export default function DonatePage() {
                       <div className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer">
                         <RadioGroupItem value="healthcare" id="healthcare" />
                         <Stethoscope className="w-5 h-5 text-primary" />
-                        <Label htmlFor="healthcare">
-                          Healthcare Initiatives
-                        </Label>
+                        <Label htmlFor="healthcare">Healthcare Initiatives</Label>
                       </div>
                       <div className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer">
                         <RadioGroupItem value="community" id="community" />
@@ -222,11 +235,7 @@ export default function DonatePage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="firstName">First Name *</Label>
-                        <Input
-                          id="firstName"
-                          placeholder="First Name"
-                          required
-                        />
+                        <Input id="firstName" placeholder="First Name" required />
                       </div>
                       <div>
                         <Label htmlFor="lastName">Last Name *</Label>
@@ -234,12 +243,7 @@ export default function DonatePage() {
                       </div>
                       <div>
                         <Label htmlFor="email">Email *</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          placeholder="Email"
-                          required
-                        />
+                        <Input id="email" type="email" placeholder="Email" required />
                       </div>
                       <div>
                         <Label htmlFor="phone">Phone</Label>
@@ -247,11 +251,7 @@ export default function DonatePage() {
                       </div>
                       <div className="md:col-span-2">
                         <Label htmlFor="address">Address</Label>
-                        <Textarea
-                          id="address"
-                          placeholder="Address for receipt"
-                          rows={3}
-                        />
+                        <Textarea id="address" placeholder="Address for receipt" rows={3} />
                       </div>
                     </div>
                   </div>
@@ -260,22 +260,14 @@ export default function DonatePage() {
                   <div className="border-t pt-6">
                     <div className="flex items-start space-x-2">
                       <Checkbox id="terms" />
-                      <Label
-                        htmlFor="terms"
-                        className="text-sm leading-relaxed"
-                      >
+                      <Label htmlFor="terms" className="text-sm leading-relaxed">
                         I agree to{" "}
-                        <a href="#" className="text-primary hover:underline">
-                          Terms & Conditions
-                        </a>
+                        <a href="#" className="text-primary hover:underline">Terms & Conditions</a>
                       </Label>
                     </div>
                     <div className="flex items-start space-x-2 mt-3">
                       <Checkbox id="receipt" defaultChecked />
-                      <Label
-                        htmlFor="receipt"
-                        className="text-sm leading-relaxed"
-                      >
+                      <Label htmlFor="receipt" className="text-sm leading-relaxed">
                         Receive tax-deductible receipt
                       </Label>
                     </div>

@@ -12,10 +12,9 @@ import {
 } from "lucide-react";
 import { useSession } from "@/components/context/SessionContext";
 import { useRouter } from "next/navigation";
-import VolunteersTab from "@/components/VolunteerTab";
-import logo from "@/public/logo.jpg";
-import DonationsTab from "@/components/DonationTab";
 import Image from "next/image";
+import logo from "@/public/logo.jpg";
+import { format } from "date-fns";
 
 export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -29,8 +28,8 @@ export default function AdminDashboard() {
   const [messages, setMessages] = useState<any[]>([]);
   const [messagePagination, setMessagePagination] = useState<any>({});
   const [activeTab, setActiveTab] = useState("donations");
-  const [loadingVolunteers, setLoadingVolunteers] = useState(false);
   const [loadingDonations, setLoadingDonations] = useState(false);
+  const [loadingVolunteers, setLoadingVolunteers] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
 
   const [donationPage, setDonationPage] = useState(1);
@@ -115,7 +114,6 @@ export default function AdminDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
-
       if (res.ok) {
         setVolunteers((prev) =>
           prev.map((v) => (v._id === id ? { ...v, status } : v))
@@ -129,24 +127,23 @@ export default function AdminDashboard() {
     setLoadingVolunteers(false);
   };
 
-  const totalDonations = donations?.reduce((sum, d) => sum + d.amount, 0);
+  const totalDonations = donations
+    .filter((d) => d.status.toLowerCase() === "success")
+    .reduce((sum, d) => sum + d.amount, 0);
   const completedDonations = donations.filter(
-    (d) => d.status === "Completed"
+    (d) => d.status.toLowerCase() === "success"
   ).length;
-  const activeVolunteers = volunteers.filter(
-    (v) => v.status === "Active"
-  ).length;
-  const pendingVolunteers = volunteers.filter(
-    (v) => v.status === "Pending"
-  ).length;
+  const activeVolunteers = volunteers.filter((v) => v.status === "Active")
+    .length;
+  const pendingVolunteers = volunteers.filter((v) => v.status === "Pending")
+    .length;
 
   const Badge = ({ children, variant = "default" }: any) => (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-        variant === "default"
-          ? "bg-green-100 text-green-800"
-          : "bg-yellow-100 text-yellow-800"
-      }`}
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${variant === "default"
+        ? "bg-green-100 text-green-800"
+        : "bg-yellow-100 text-yellow-800"
+        }`}
     >
       {children}
     </span>
@@ -189,11 +186,12 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       <Header handleLogout={handleLogout} Button={Button} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
             title="Total Donations"
             value={`₹${totalDonations?.toLocaleString() || 0}`}
@@ -218,96 +216,302 @@ export default function AdminDashboard() {
 
         <TabMenu activeTab={activeTab} setActiveTab={setActiveTab} />
 
-        {activeTab === "donations" && (
-          <div>
-            <SearchInput
-              value={donationSearch}
-              onChange={(val) => {
-                setDonationSearch(val);
-                setDonationPage(1);
-                fetchDonations(1, val);
-              }}
-              placeholder="Search donations..."
-            />
-            <DonationsTab donation={donations} Badge={Badge} Button={Button} />
-            <Pagination
+        <div className="space-y-6">
+          {activeTab === "donations" && (
+            <DonationsSection
+              donations={donations}
+              Badge={Badge}
+              Button={Button}
               page={donationPage}
-              setPage={(p) => {
-                setDonationPage(p);
-                fetchDonations(p, donationSearch);
-              }}
+              setPage={setDonationPage}
               totalPages={donationPagination.totalPages || 1}
+              fetchData={fetchDonations}
+              search={donationSearch}
+              setSearch={setDonationSearch}
             />
-          </div>
-        )}
+          )}
 
-        {activeTab === "volunteers" && (
-          <div>
-            <SearchInput
-              value={volunteerSearch}
-              onChange={(val) => {
-                setVolunteerSearch(val);
-                setVolunteerPage(1);
-                fetchVolunteers(1, val);
-              }}
-              placeholder="Search volunteers..."
-            />
-            <VolunteersTab
+          {activeTab === "volunteers" && (
+            <VolunteersSection
               volunteers={volunteers}
               updateVolunteerStatus={updateVolunteerStatus}
               loading={loadingVolunteers}
-            />
-            <Pagination
               page={volunteerPage}
-              setPage={(p) => {
-                setVolunteerPage(p);
-                fetchVolunteers(p, volunteerSearch);
-              }}
+              setPage={setVolunteerPage}
               totalPages={volunteerPagination.totalPages || 1}
+              fetchData={fetchVolunteers}
+              search={volunteerSearch}
+              setSearch={setVolunteerSearch}
             />
-          </div>
-        )}
+          )}
 
-        {activeTab === "messages" && (
-          <div>
-            <SearchInput
-              value={messageSearch}
-              onChange={(val) => {
-                setMessageSearch(val);
-                setMessagePage(1);
-                fetchMessages(1, val);
-              }}
-              placeholder="Search messages..."
-            />
-            <MessagesTab messages={messages} />
-            <Pagination
+          {activeTab === "messages" && (
+            <MessagesSection
+              messages={messages}
               page={messagePage}
-              setPage={(p) => {
-                setMessagePage(p);
-                fetchMessages(p, messageSearch);
-              }}
+              setPage={setMessagePage}
               totalPages={messagePagination.totalPages || 1}
+              fetchData={fetchMessages}
+              search={messageSearch}
+              setSearch={setMessageSearch}
             />
-          </div>
-        )}
+          )}
 
-        {activeTab === "content" && <ContentTab Button={Button} />}
+          {activeTab === "content" && <ContentTab Button={Button} />}
+        </div>
       </div>
     </div>
   );
 }
 
+/* ===== Sections ===== */
+const DonationsSection = ({
+  donations,
+  Badge,
+  Button,
+  page,
+  setPage,
+  totalPages,
+  fetchData,
+  search,
+  setSearch,
+}: any) => {
+  console.log(donations)
+  return (<div>
+    <SearchInput
+      value={search}
+      onChange={(val) => {
+        setSearch(val);
+        setPage(1);
+        fetchData(1, val);
+      }}
+      placeholder="Search donations..."
+    />
+    <div className="overflow-x-auto bg-white border border-slate-200 shadow-inner rounded-lg mb-6">
+      <table className="min-w-full text-sm divide-y divide-slate-100">
+        <thead>
+          <tr className="bg-slate-50 border-b border-slate-200">
+            {["ID", "Donor", "Amount", "Purpose", "Email", "Donation-Type", "Status", "Date"].map(
+              (h) => (
+                <th
+                  key={h}
+                  className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                >
+                  {h}
+                </th>
+              )
+            )}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {donations.length > 0 ? (
+            donations.map((d: any, idx: number) => (
+              <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                <td className="px-4 py-3 font-medium text-slate-800 truncate max-w-[150px]">
+                  {d.id}
+                </td>
+                <td className="px-4 py-3 text-slate-700 truncate max-w-[120px]">
+                  {d.donor}
+                </td>
+                <td className="px-4 py-3 text-slate-600">₹{d.amount}</td>
+                <td className="px-4 py-3 text-slate-600 truncate max-w-[120px]">
+                  {d.purpose}
+                </td>
+                <td className="px-4 py-3 text-slate-600">{d.email}</td>
+                <td className="px-4 py-3 text-slate-600">{d.type}</td>
+                <td className="px-4 py-3">
+                  <Badge>{d.status}</Badge>
+                </td>
+                <td className="px-4 py-3 text-slate-500 whitespace-nowrap">
+                  {format(new Date(d.date), "dd MMM yyyy, hh:mm a")}
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={6} className="text-center py-4 text-slate-500">
+                No donations found
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+
+    {totalPages > 1 && (
+      <Pagination page={page} setPage={setPage} totalPages={totalPages} />
+    )}
+  </div>)
+}
+
+const VolunteersSection = ({
+  volunteers,
+  updateVolunteerStatus,
+  loading,
+  page,
+  setPage,
+  totalPages,
+  fetchData,
+  search,
+  setSearch,
+}: any) => (
+  <div>
+    <SearchInput
+      value={search}
+      onChange={(val) => {
+        setSearch(val);
+        setPage(1);
+        fetchData(1, val);
+      }}
+      placeholder="Search volunteers..."
+    />
+    <div className="overflow-x-auto bg-white border border-slate-200 shadow-inner rounded-lg mb-6">
+      <table className="min-w-full text-sm divide-y divide-slate-100">
+        <thead>
+          <tr className="bg-slate-50 border-b border-slate-200">
+            {["Name", "Email", "Status"].map((h) => (
+              <th
+                key={h}
+                className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {volunteers.length > 0 ? (
+            volunteers.map((v: any) => (
+              <tr key={v._id} className="hover:bg-slate-50 transition-colors">
+                <td className="px-4 py-3 font-medium text-slate-800 truncate max-w-[150px]">
+                  {v.name}
+                </td>
+                <td className="px-4 py-3 text-slate-600 truncate max-w-[200px]">
+                  {v.email}
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  <select
+                    className="border rounded px-2 py-1"
+                    value={v.status}
+                    onChange={(e) =>
+                      updateVolunteerStatus(v._id, e.target.value)
+                    }
+                  >
+                    <option>Active</option>
+                    <option>Pending</option>
+                  </select>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={3} className="text-center py-4 text-slate-500">
+                No volunteers found
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+    <Pagination page={page} setPage={setPage} totalPages={totalPages} />
+  </div>
+);
+
+const MessagesSection = ({
+  messages,
+  page,
+  setPage,
+  totalPages,
+  fetchData,
+  search,
+  setSearch,
+}: any) => {
+  return (
+    <div className="space-y-4">
+      {/* Search */}
+      <SearchInput
+        value={search}
+        onChange={(val) => {
+          setSearch(val);
+          setPage(1);
+          fetchData(1, val);
+        }}
+        placeholder="Search messages..."
+      />
+
+      {/* Table */}
+      <div className="overflow-x-auto bg-white border border-slate-200 shadow-inner rounded-lg">
+        <table className="min-w-full text-sm divide-y divide-slate-100">
+          <thead className="bg-slate-50">
+            <tr>
+              {["ID","Name", "Email", "Phone", "Subject", "Message", "Date"].map((header) => (
+                <th
+                  key={header}
+                  className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                >
+                  {header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {messages.length > 0 ? (
+              messages.map((m: any,idx:number) => (
+                <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                   <td className="px-4 py-3 text-slate-600 truncate max-w-[180px]">
+                    {m._id}
+                  </td>
+                  <td className="px-4 py-3 font-medium text-slate-800 truncate max-w-[120px]">
+                    {m.firstName} {m.lastName}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600 truncate max-w-[180px]">
+                    {m.email}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600 truncate max-w-[120px]">
+                    {m.phone || "-"}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600 truncate max-w-[150px]">
+                    {m.subject || "-"}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600 truncate max-w-[250px]">
+                    {m.message}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-slate-500">
+                    {new Date(m.createdAt).toLocaleString()}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={6} className="text-center py-4 text-slate-500">
+                  No messages found
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      <Pagination page={page} setPage={setPage} totalPages={totalPages} />
+    </div>
+  );
+};
+
+
 /* ===== Subcomponents ===== */
 const Header = ({ handleLogout, Button }: any) => (
-  <header className="bg-white  py-2 border-b border-slate-200">
+  <header className="bg-white py-2 border-b border-slate-200 sticky top-0 z-10">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex justify-between items-center h-16">
+      <div className="flex justify-between items-center h-16 flex-wrap gap-3">
         <div className="flex items-center space-x-2">
           <Image src={logo.src} width={56} height={56} alt="Logo" />
-          <h1 className="text-xl font-semibold text-slate-900">
-            Vanya Foundation
-          </h1>
-          <p className="text-sm text-slate-500">Admin Dashboard</p>
+          <div>
+            <h1 className=" text-md md:text-xl font-semibold text-slate-900">
+              Vanya Foundation
+            </h1>
+            <p className="text-sm text-slate-500 hidden md:block">Admin Dashboard</p>
+          </div>
         </div>
         <div className="flex items-center space-x-3">
           <Button variant="ghost" size="sm" onClick={handleLogout}>
@@ -321,7 +525,7 @@ const Header = ({ handleLogout, Button }: any) => (
 );
 
 const StatCard = ({ title, value, icon }: any) => (
-  <div className="bg-white border border-slate-200 shadow-inner rounded-lg p-6 flex items-center justify-between">
+  <div className="bg-white border border-slate-200 shadow-inner rounded-lg p-6 flex items-center justify-between min-w-[180px]">
     <div>
       <p className="text-sm font-medium text-slate-500 mb-1">{title}</p>
       <p className="text-2xl font-semibold text-slate-900">{value}</p>
@@ -333,16 +537,15 @@ const StatCard = ({ title, value, icon }: any) => (
 );
 
 const TabMenu = ({ activeTab, setActiveTab }: any) => (
-  <div className="bg-white border border-slate-200 shadow-inner rounded-lg p-1 flex space-x-1 mb-6">
+  <div className="bg-white border border-slate-200 shadow-inner rounded-lg p-1 flex flex-wrap gap-1 mb-6">
     {["donations", "volunteers", "messages", "content"].map((tab) => (
       <button
         key={tab}
         onClick={() => setActiveTab(tab)}
-        className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-          activeTab === tab
-            ? "bg-slate-100 text-slate-900"
-            : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-        }`}
+        className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === tab
+          ? "bg-slate-100 text-slate-900"
+          : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+          } whitespace-nowrap`}
       >
         {tab.charAt(0).toUpperCase() + tab.slice(1)}
       </button>
@@ -363,7 +566,7 @@ const SearchInput = ({ value, onChange, placeholder }: any) => (
 );
 
 const Pagination = ({ page, setPage, totalPages }: any) => (
-  <div className="flex justify-center items-center space-x-2 mt-4">
+  <div className="flex justify-center items-center flex-wrap space-x-2 mt-4">
     <button
       onClick={() => setPage(Math.max(page - 1, 1))}
       className="px-3 py-1 bg-slate-200 rounded-md hover:bg-slate-300"
@@ -375,11 +578,10 @@ const Pagination = ({ page, setPage, totalPages }: any) => (
       <button
         key={i}
         onClick={() => setPage(i + 1)}
-        className={`px-3 py-1 rounded-md ${
-          page === i + 1
-            ? "bg-slate-900 text-white"
-            : "bg-slate-200 hover:bg-slate-300"
-        }`}
+        className={`px-3 py-1 rounded-md ${page === i + 1
+          ? "bg-slate-900 text-white"
+          : "bg-slate-200 hover:bg-slate-300"
+          }`}
       >
         {i + 1}
       </button>
@@ -391,45 +593,6 @@ const Pagination = ({ page, setPage, totalPages }: any) => (
     >
       Next
     </button>
-  </div>
-);
-
-const MessagesTab = ({ messages }: any) => (
-  <div className="bg-white border border-slate-200 shadow-inner rounded-lg mb-6 overflow-x-auto">
-    <table className="w-full text-sm divide-y divide-slate-100">
-      <thead>
-        <tr className="bg-slate-50 border-b border-slate-200">
-          {["Name", "Email", "Message", "Date"].map((h) => (
-            <th
-              key={h}
-              className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-            >
-              {h}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-slate-100">
-        {messages.length > 0 ? (
-          messages.map((m: any) => (
-            <tr key={m.id} className="hover:bg-slate-50 transition-colors">
-              <td className="px-4 py-3 font-medium text-slate-800">{m.name}</td>
-              <td className="px-4 py-3 text-slate-600">{m.email}</td>
-              <td className="px-4 py-3 text-slate-600">{m.message}</td>
-              <td className="px-4 py-3 text-slate-500">
-                {new Date(m.createdAt).toLocaleString()}
-              </td>
-            </tr>
-          ))
-        ) : (
-          <tr>
-            <td colSpan={4} className="text-center py-4 text-slate-500">
-              No messages found
-            </td>
-          </tr>
-        )}
-      </tbody>
-    </table>
   </div>
 );
 

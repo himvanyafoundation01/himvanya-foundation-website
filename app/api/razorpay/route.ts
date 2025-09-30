@@ -17,7 +17,6 @@ export async function POST(req: NextRequest) {
         let order: any;
 
         if (type === "monthly") {
-            // Create subscription plan
             const plan = await razorpay.plans.create({
                 period: "monthly",
                 interval: 1,
@@ -49,6 +48,7 @@ export async function POST(req: NextRequest) {
             type,
             purpose,
             razorpay_order_id: order.id,
+            status: "pending",
         });
 
         return NextResponse.json(order);
@@ -70,15 +70,11 @@ export async function PUT(req: NextRequest) {
 
     const status = expectedSignature === razorpay_signature ? "success" : "failed";
 
-    await Donation.findOneAndUpdate(
+    const donation = await Donation.findOneAndUpdate(
         { razorpay_order_id },
         { razorpay_payment_id, razorpay_signature, status },
         { new: true }
     );
 
-    if (status === "success") {
-        return NextResponse.json({ success: true });
-    } else {
-        return NextResponse.json({ success: false, error: "Payment verification failed" }, { status: 400 });
-    }
+    return NextResponse.json({ success: status === "success", donation });
 }

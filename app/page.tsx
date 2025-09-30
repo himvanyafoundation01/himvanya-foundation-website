@@ -69,23 +69,24 @@ export default function HomePageEditor() {
           )}
         </div>
       )}
-
-      <section className="w-screen h-screen relative">
+      <section className="w-screen relative flex justify-center items-center bg-gray-100">
         {isEditing ? (
-          // <div></div>
           <UploadImage
             value={content.topImage}
             onChange={(value) => setContent({ ...content, topImage: value })}
+
           />
         ) : (
           <Image
             src={content.topImage}
-            fill
             alt="topimage"
-            className="object-cover"
+            className="object-contain w-full h-auto"
+            width={1920} // your image width
+            height={1080} // your image height
           />
         )}
       </section>
+
 
       {/* Hero */}
       <section className="relative bg-gradient-to-r from-primary/10 to-primary/5 py-20">

@@ -22,25 +22,21 @@ import {
 import { Download, Eye, Mail, MoreHorizontal } from "lucide-react";
 
 type Donation = {
-  _id: string;
-  name: string;
+  id: string;
+  donor: string;
   email: string;
-  phone: string;
-  address: string;
   amount: number;
   type: "one-time" | "monthly";
   purpose: string;
   status: "pending" | "success" | "failed";
-  createdAt: string;
+  date: string;
 };
 
 export default function DonationsTab({
   Badge,
-  Donation,
   Button,
 }: {
   Badge: any;
-  Donation: any;
   Button: any;
 }) {
   const [donations, setDonations] = useState<Donation[]>([]);
@@ -54,8 +50,8 @@ export default function DonationsTab({
       setLoading(true);
       const res = await fetch(`/api/donations?page=${page}&limit=${limit}`);
       const data = await res.json();
-      setDonations(data.donations);
-      setTotalPages(data.pagination.totalPages);
+      setDonations(data.donations || []);
+      setTotalPages(data.pagination?.totalPages || 1);
       setLoading(false);
     };
     fetchDonations();
@@ -63,8 +59,8 @@ export default function DonationsTab({
 
   return (
     <div className="p-4 bg-white border border-slate-200 rounded-lg shadow-sm">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-slate-900">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+        <h3 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2 sm:mb-0">
           Recent Donations
         </h3>
         <Button variant="outline" size="sm">
@@ -73,50 +69,38 @@ export default function DonationsTab({
       </div>
 
       <div className="overflow-x-auto">
-        <Table>
+        <Table className="min-w-[700px] sm:min-w-full text-sm sm:text-base">
           <TableHeader>
             <TableRow>
-              {[
-                "ID",
-                "Donor",
-                "Amount",
-                "Purpose",
-                "Date",
-                "Status",
-                "Actions",
-              ].map((h) => (
-                <TableHead key={h}>{h}</TableHead>
-              ))}
+              {["ID", "Donor", "Email", "Amount", "Purpose", "Date", "Status", "Actions"].map(
+                (h) => (
+                  <TableHead key={h} className="whitespace-nowrap">
+                    {h}
+                  </TableHead>
+                )
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-6">
+                <TableCell colSpan={8} className="text-center py-6 text-sm">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : donations.length > 0 ? (
-              donations.map((d) => (
-                <TableRow key={d._id} className="hover:bg-slate-50">
-                  <TableCell className="font-mono text-xs">{d._id}</TableCell>
-                  <TableCell>{d.name}</TableCell>
-                  <TableCell>₹{d.amount.toLocaleString()}</TableCell>
-                  <TableCell>{d.purpose}</TableCell>
-                  <TableCell>
-                    {new Date(d.createdAt).toLocaleDateString()}
+              donations.map((d,idx) => (
+                <TableRow key={idx} className="hover:bg-slate-50">
+                  <TableCell className="font-mono text-xs sm:text-sm truncate max-w-[120px]">
+                    {d.id}
                   </TableCell>
+                  <TableCell className="truncate max-w-[100px]">{d.donor}</TableCell>
+                  <TableCell className="truncate max-w-[150px]">{d.email}</TableCell>
+                  <TableCell>₹{d.amount.toLocaleString()}</TableCell>
+                  <TableCell className="truncate max-w-[120px]">{d.purpose}</TableCell>
+                  <TableCell>{new Date(d.date).toLocaleDateString()}</TableCell>
                   <TableCell>
-                    <Select value={d.status} onValueChange={() => {}}>
-                      <SelectTrigger className="w-[120px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="success">Success</SelectItem>
-                        <SelectItem value="failed">Failed</SelectItem>
-                      </SelectContent>
-                    </Select>
+                   {d.status}
                   </TableCell>
                   <TableCell className="flex space-x-1">
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -133,7 +117,7 @@ export default function DonationsTab({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-6">
+                <TableCell colSpan={8} className="text-center py-6 text-sm">
                   No donations found
                 </TableCell>
               </TableRow>
@@ -143,9 +127,9 @@ export default function DonationsTab({
       </div>
 
       {/* Pagination */}
-      <div className="flex justify-between items-center mt-4">
+      <div className="flex flex-col sm:flex-row justify-between items-center mt-4 gap-2">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Rows per page:</span>
+          <span className="text-xs sm:text-sm text-slate-600">Rows per page:</span>
           <Select
             value={String(limit)}
             onValueChange={(val) => {
@@ -153,7 +137,7 @@ export default function DonationsTab({
               setPage(1);
             }}
           >
-            <SelectTrigger className="w-[80px]">
+            <SelectTrigger className="w-[80px] text-xs sm:text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -164,7 +148,7 @@ export default function DonationsTab({
           </Select>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <Button
             variant="outline"
             size="sm"
@@ -173,7 +157,7 @@ export default function DonationsTab({
           >
             Previous
           </Button>
-          <span className="text-sm">
+          <span className="text-xs sm:text-sm">
             Page {page} of {totalPages}
           </span>
           <Button

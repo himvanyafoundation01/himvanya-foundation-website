@@ -63,6 +63,9 @@ export function Header() {
             >
               Contact
             </Link>
+            <Link href={"/volunteer"} className="text-foreground hover:text-primary transition-colors">
+              Volunteer
+            </Link>
             <Button asChild className="bg-primary hover:bg-primary/90">
               <Link href="/donate">Donate Now</Link>
             </Button>
